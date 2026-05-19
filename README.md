@@ -1,39 +1,31 @@
-# Enhanced Sampling with Entropy-Based Collective Variables
+# Implementing information entropy change as the general-purpose collective variable for enhanced sampling
 
-We are using [PySAGES](https://github.com/SSAGESLabs/PySAGES.git) to implement metadynamics simulations and [QUESTS](https://github.com/dskoda/quests.git) for information entropy (local envrionment similarity) calculation. 
+We are using information entropy as the general-purpose collective variable (CV) for metadynamics enhanced sampling and we have validated this methods across multiple organic and inorganic systems. It can quantify the "novelty" of the sampled configurations based on chosen reference configurations and push the system away from sampling the reference structures.
+
+Preprint of this work is avaliable: [preprint](https://doi.org/10.48550/arXiv.2604.05239)
+
+# Dependencies
+
+[PySAGES](https://github.com/SSAGESLabs/PySAGES.git)
+[QUESTS](https://github.com/dskoda/quests.git)
+[Openff](https://github.com/openforcefield/openff-toolkit.git)
+ASE
+RDKit
+OpenMM
+Jax
+
+# PySages setup
+
+Please follow the instruction in the PySAGES homepage [PySAGES](https://github.com/SSAGESLabs/PySAGES.git) for OpenMM and LAMMPS plugin compilation. Few codes have been adjusted for this work to track the simulation box under NPT ensemble. The adjusted repo can be found here [PySAGES-adjusted](git@github.com:XiangruiLi-Ray/PySAGES.git).
 
 # Examples
 
-## 1D examples
+### 1. Alanine Dipeptide
 
-This folder contains the 1D toy example:
+### 2. Alanine Tetrapeptide
 
-Energy surface has two minima with NVE ensemble, and the simulation begins at one of minimum.
+### 3. Copper liquid-solid nucleation
 
-## 2D examples
+### 4. Graphite solid-solid nucleation
 
-This folder contains the 2D toy example:
-
-We have tested Himmelblau's function as energy surface and start the simulation at the minimum with lowest energy barrier to another.
-
-## 3D examples
-
-### 1. Lennard Jones Cluster (complete)
-
-
-### 2. Alanine Dipeptide (complete)
-
-
-### 3. Alanine Tetrapeptide (complete)
-
-
-### 4. Vacancy Diffusion (complete)
-
-
-### 5. alpha Tin beta Tin phase transformation (incomplete)
-
-
-### 6. Graphite Diamond Phase transformation (ongoing)
-
-
-### 7. alpha Titanium omega Titanium phase transformation (ongoing)
+### 5. Silicon liquid-solid nucleation
