@@ -1,0 +1,41 @@
+variable T1 equal 1100
+variable T2 equal 1100
+variable P equal 1
+variable Q equal (v_T1-v_T2)*1000
+
+units       metal
+atom_style	atomic
+atom_modify map array
+
+read_data   structure/Cu-half.lmp
+#read_data   structure/Cu_half_${T2}K_${P}bar.lmp
+
+pair_style      eam/alloy
+pair_coeff      * * ff/Cu01.eam.alloy Cu
+
+thermo      1000
+
+minimize    1.0e-4 1.0e-6 1000 10000
+velocity    all create ${T1} 1234 rot yes mom yes
+timestep    0.001
+
+#equilibration
+
+fix	    1 all npt temp ${T1} ${T1} $(100*dt) iso ${P} ${P} $(1000*dt)
+run         100000
+
+unfix 	    1
+#fix	    2 all npt temp ${T1} ${T2} $(100*dt) iso ${P} ${P} $(1000*dt)
+#run	    ${Q}
+
+#production
+
+#unfix 	    2
+fix 	    3 all npt temp ${T2} ${T2} $(100*dt) iso ${P} ${P} $(1000*dt)
+
+log         test/results_unbiased_long/Cu_half_${T2}K_${P}bar_noquench.log
+dump        1 all custom 1000 test/results_unbiased_long/Cu_half_${T2}K_${P}bar_noquench.traj element x y z id
+dump_modify 1 element Cu
+run         1000000
+
+#write_data  structure/Cu_half_${T2}K_${P}bar.lmp

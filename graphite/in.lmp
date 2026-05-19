@@ -1,0 +1,33 @@
+variable T equal 3000
+variable P equal 1000000
+
+units       metal
+atom_style	atomic
+atom_modify map array
+read_data   structure/diamond-small.lmp
+pair_style      tersoff
+pair_coeff      * * ff/Tersoff_1988_C.params C
+
+#pair_style lcbop
+#pair_coeff * * ff/C.lcbop C
+
+thermo      1000
+
+minimize    1.0e-4 1.0e-6 1000 10000
+velocity    all create ${T} 1234 rot yes mom yes
+timestep    0.001
+
+#equilibration
+
+fix	        1 all npt temp ${T} ${T} $(100*dt) aniso ${P} ${P} $(1000*dt)
+run         100000
+
+#production
+
+log         test/results_unbiased_tersoff/diamond_${T}K_${P}bar.log
+dump        1 all custom 1000 test/results_unbiased_tersoff/diamond_${T}K_${P}bar.traj element x y z id
+dump_modify 1 element C
+
+run         10000000
+
+#write_data  structure/graphite_${T}K_${P}bar.lmp

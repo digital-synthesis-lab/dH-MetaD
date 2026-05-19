@@ -1,0 +1,58 @@
+variable T1 equal 2500
+variable T2 equal 1250
+variable P equal 0
+variable Q equal (v_T1-v_T2)*1000
+
+units       metal
+atom_style	atomic
+atom_modify map array
+
+read_data   structure/Si.lmp
+
+pair_style      sw
+pair_coeff      * * ff/Si.sw Si
+
+thermo      1000
+
+minimize    1.0e-4 1.0e-6 1000 10000
+velocity    all create ${T2} 1234 rot yes mom yes
+timestep    0.001
+
+#equilibration - NPT
+
+#fix         1 all npt temp ${T1} ${T1} $(100*dt) iso ${P} ${P} $(1000*dt)
+#run         100000
+
+#unfix       1
+#fix         2 all npt temp ${T1} ${T2} $(100*dt) iso ${P} ${P} $(1000*dt)
+#run         ${Q}
+
+#unfix       2
+#fix         3 all npt temp ${T2} ${T2} $(100*dt) iso ${P} ${P} $(1000*dt)
+#run         100000
+
+#equilibration - NVT
+
+fix         0 all npt temp ${T2} ${T2} $(100*dt) iso ${P} ${P} $(1000*dt)
+run         100000
+
+unfix       0
+#fix         1 all nvt temp ${T1} ${T1} $(100*dt)
+#run         100000
+
+#unfix       1
+#fix         2 all nvt temp ${T1} ${T2} $(100*dt)
+#run         ${Q}
+
+#unfix       2
+fix         3 all nvt temp ${T2} ${T2} $(100*dt)
+#run         100000
+
+#production
+
+log         test/results_unbiased_long/Si_${T2}K_${P}bar_nvt_noquench1.log
+dump        1 all custom 1000 test/results_unbiased_long/Si_${T2}K_${P}bar_nvt_noquench1.traj element x y z id
+dump_modify 1 element Si
+run         10000000
+
+#write_data  structure/Si_${T2}K_${P}bar_nvt.lmp
