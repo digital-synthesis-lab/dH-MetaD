@@ -8,11 +8,11 @@ Preprint of this work is avaliable: [preprint](https://doi.org/10.48550/arXiv.26
 # Installation
 
 You can install all dependencies from this reposistory:
-"""
+```
 git clone https://github.com/XiangruiLi-Ray/dH-MetaD.git
 cd dH-Metad
 pip install .
-"""
+```
 
 Some repo links are included here:
 [PySAGES](https://github.com/SSAGESLabs/PySAGES.git)
@@ -35,4 +35,4 @@ This repo have all files needed to directly implement dH-metadynamics across the
 
 4. Graphite solid-solid nucleation (graphite)
 
-5.Silicon liquid-solid nucleation (silicon)
+5. Silicon liquid-solid nucleation (silicon)
