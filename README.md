@@ -9,7 +9,7 @@ Preprint of this work is avaliable: [preprint](https://doi.org/10.48550/arXiv.26
 
 You can install all dependencies from this reposistory:
 ```
-git clone https://github.com/XiangruiLi-Ray/dH-MetaD.git
+git clone https://github.com/digital-synthesis-lab/dH-MetaD.git
 cd dH-Metad
 pip install .
 ```
