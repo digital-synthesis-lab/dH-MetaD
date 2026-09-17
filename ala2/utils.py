@@ -11,16 +11,6 @@ DEFAULT_PARAMS=jnp.array([(1,0.1),(1,0.2),(1,0.3),(1,0.4)])
 pi = jnp.pi
 
 
-# def distance_matrix(A, B):
-#     """
-#     Calculate distance matrix
-#     """
-#     M = A @ B.T
-#     r = jnp.diag(M).reshape(-1,1)
-#     D = r + r.T - 2 * M
-#     return D
-
-
 @jit
 def distance_matrix(A: jnp.ndarray, B: jnp.ndarray):
     """Fully vectorized continuous distance calculation."""
@@ -33,21 +23,6 @@ def distance_matrix(A: jnp.ndarray, B: jnp.ndarray):
     # squared_dist_stable = squared_dist + 1e-8
     return jnp.sqrt(squared_dist_stable)
 
-
-# @jit
-# def distance_matrix(X, Y, eps=1e-8):
-#     """
-#     Numerically stable version that works well with autodiff.
-#     """
-#     # ||x - y||^2 = ||x||^2 + ||y||^2 - 2<x,y>
-#     X_sqnorms = jnp.sum(X**2, axis=1, keepdims=True)  # (n, 1)
-#     Y_sqnorms = jnp.sum(Y**2, axis=1, keepdims=True).T  # (1, m)
-#     XY = jnp.dot(X, Y.T)  # (n, m)
-    
-#     distances_sq = X_sqnorms + Y_sqnorms - 2 * XY
-    
-#     # Add small epsilon before sqrt to ensure positive values and stable gradients
-#     return jnp.sqrt(distances_sq + eps)
 
 
 @jit

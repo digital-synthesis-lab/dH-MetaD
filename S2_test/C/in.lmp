@@ -1,0 +1,28 @@
+variable T equal 3000
+variable P equal 1000000
+
+units       metal
+atom_style  atomic
+read_data   graphite.lmp
+pair_style  tersoff
+pair_coeff  * * ff/Tersoff_1988_C.params C
+
+thermo      1000
+
+minimize    1.0e-4 1.0e-6 1000 10000
+velocity    all create ${T} 3456 rot yes mom yes
+timestep    0.001
+
+#equilibration
+fix	    1 all npt temp ${T} ${T} $(100*dt) aniso ${P} ${P} $(1000*dt)
+run         100000
+unfix       1
+
+#production
+fix 	    2 all plumed plumedfile plumed.dat outfile results3/p.log
+fix         3 all npt temp ${T} ${T} $(100*dt) aniso ${P} ${P} $(1000*dt)
+log         results3/graphite_${T}K_${P}bar.log
+dump        1 all custom 1000 results3/graphite_${T}K_${P}bar.traj element x y z id
+dump_modify 1 element C
+
+run         1000000

@@ -12,21 +12,11 @@ import jax
 DEFAULT_BANDWIDTH=1
 DEFAULT_BATCH = 10000
 DEFAULT_PARAMS = jnp.array([(1,1),(1,2),(1,3),(1,4)])
-DEFAULT_CUTOFF = 5
+DEFAULT_CUTOFF = 4
 DEFAULT_K = 16
 DEFAULT_TOLERANCE = 40
 DEFAULT_PBC = jnp.array([1,1,1])
 pi = jnp.pi
-
-
-# def distance_matrix(A, B):
-#     """
-#     Calculate distance matrix
-#     """
-#     M = A @ B.T
-#     r = jnp.diag(M).reshape(-1,1)
-#     D = r + r.T - 2 * M
-#     return D
 
 
 @jit
@@ -115,55 +105,6 @@ def get_distance_matrix(positions, cell, cutoff=DEFAULT_CUTOFF):
     return distances
 
 
-# def get_neighborlist(positions: jnp.ndarray, 
-#                      cell: jnp.ndarray, 
-#                      cutoff=DEFAULT_CUTOFF, 
-#                      k=DEFAULT_K):
-#     atoms = Atoms(positions=positions, cell=cell, pbc=DEFAULT_PBC)
-#     i, j, d = neighbor_list('ijd', a=atoms, cutoff=cutoff)
-#     matrix = jnp.ones([len(positions)]*2) * 100
-#     matrix = matrix.at[i, j].set(d)
-#     sorted_indices = jnp.argsort(matrix, axis=1)
-#     k_nearest_indices = sorted_indices[:, :k]
-#     i = jnp.repeat(jnp.arange(len(positions)), k)
-#     j = k_nearest_indices.flatten()
-#     return jnp.array([i,j])
-
-
-# def get_neighborlist(positions: jnp.ndarray, 
-#                      cell: jnp.ndarray, 
-#                      cutoff=DEFAULT_CUTOFF, 
-#                      k=DEFAULT_K):
-#     # atoms = Atoms(positions=positions, cell=cell, pbc=DEFAULT_PBC)
-#     # i, j, d = neighbor_list('ijd', a=atoms, cutoff=cutoff)
-    
-#     # i = jnp.array(i, dtype=jnp.int32)
-#     # j = jnp.array(j, dtype=jnp.int32)
-#     # d = jnp.array(d, dtype=jnp.float32)
-    
-#     # n = len(positions)
-#     # matrix = jnp.full((n, n), jnp.inf, dtype=jnp.float32)
-#     # matrix = matrix.at[i, j].set(d)
-#     matrix = get_distance_matrix(positions, cell)
-    
-#     k_nearest_indices = jnp.argsort(matrix, axis=1)[:, 1:k+1]
-    
-#     i_out = jnp.repeat(jnp.arange(len(positions), dtype=jnp.int32), k)
-#     j_out = k_nearest_indices.ravel()
-    
-#     return jnp.stack([i_out, j_out])
-
-
-# def get_neighborlist(positions: jnp.ndarray, 
-#                      cell: jnp.ndarray, 
-#                      cutoff=DEFAULT_CUTOFF):
-#     atoms = Atoms(positions=positions, cell=cell, pbc=DEFAULT_PBC)
-#     i, j = neighbor_list('ij', a=atoms, cutoff=cutoff)
-#     adj_matrix = jnp.zeros((len(positions), len(positions)), dtype=int)
-#     adj_matrix = adj_matrix.at[i, j].set(1)
-#     return i, j
-
-
 @jit
 def acsf_embed(distances: jnp.ndarray,
                 r_cut: float = DEFAULT_CUTOFF,
@@ -180,26 +121,6 @@ def acsf_embed(distances: jnp.ndarray,
     return jnp.column_stack([G1_atoms, G2_atoms])
 
 
-# def acsf_embed(nl: jnp.ndarray,
-#                 d: jnp.ndarray,
-#                 n_atoms: int,
-#                 r_cut: int = DEFAULT_CUTOFF,
-#                 params: jnp.ndarray = DEFAULT_PARAMS,
-#                 ):
-#     """ACSF embedding using neighbor list and distances"""
-#     i_indices = nl[0,:]
-
-#     G1_pairs = g1_embed(d, r_cut)  # (n_pairs,)
-#     G2_pairs = g2_embed(d, r_cut, params)  # (n_pairs, n_params)
-
-#     G1_atoms = jnp.zeros(n_atoms)
-#     G1_atoms = G1_atoms.at[i_indices].add(G1_pairs)
-
-#     G2_atoms = jnp.zeros((n_atoms, G2_pairs.shape[1]))
-#     G2_atoms = G2_atoms.at[i_indices].add(G2_pairs)
-
-#     return jnp.column_stack([G1_atoms, G2_atoms])
-
 
 @jit
 def normalize(dset):
@@ -214,17 +135,6 @@ def normalize(dset):
 def sumexp(X: jnp.ndarray):
     return jnp.sum(jnp.exp(X), axis=1)
 
-
-# @jit
-# def kernel_sum(
-#     x: jnp.ndarray,
-#     y: jnp.ndarray,
-#     h: float = DEFAULT_BANDWIDTH,
-# ):
-#     z = distance_matrix(x, y)
-#     z = z / h
-#     p_x = sumexp(-0.5 * (z**2))
-#     return p_x
 
 
 @jit

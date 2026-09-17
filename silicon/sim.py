@@ -22,7 +22,6 @@ from pysages.methods import Metadynamics, MetaDLogger
 
 # Local
 from utils import *
-from descriptor import *
 
 
 def initialize_cache(data_file):
@@ -43,7 +42,7 @@ def initialize_cache(data_file):
 
 def generate_simulation(file_name, temperature, pressure, output_stride, args=""):
     context = lammps(cmdargs=args.split())
-    context.command(f'variable T2 equal {temperature}')
+    context.command(f'variable T equal {temperature}')
     context.command(f'variable P equal {pressure}')
     context.file('in.lmp')
     context.command(f'log {file_name}.log')
@@ -56,13 +55,13 @@ def get_args(argv):
     """Process the command-line arguments to this script."""
 
     available_args = [
-        ("time-steps", "t", int, 1e6, "Number of simulation steps"),
+        ("time-steps", "t", int, 5e6, "Number of simulation steps"),
         ("kokkos", "k", bool, True, "Whether to use Kokkos acceleration"),
-        ("log-steps", "l", int, 100, "Number of simulation steps for logging"),
-        ("temperature", "T", int, 1250, "Temperature of the simulation"),
+        ("log-steps", "l", int, 1000, "Number of simulation steps for logging"),
+        ("temperature", "T", int, 1200, "Temperature of the simulation"),
         ("pressure", "p", int, 0, "Pressure of the simulation"),
         ("height", "y", float, 0.1, "Height of gaussian bias"),
-        ("width", "w", float, 16, "Width of gaussian bias"),
+        ("width", "w", float, 8, "Width of gaussian bias"),
         ("deltaT", "dT", float, None, "DeltaT for well-tempered metadynamics"),
         ("stride", "s", int, 100, "Frequency of adding gaussian bias"),
         ("bandwidth", "b", float, 0.035, "Bandwidth for dH calculation"),
@@ -84,18 +83,6 @@ def get_args(argv):
 
 
 args = get_args(sys.argv[1:])
-refer = read(f'results_unbiased/Si_{args.temperature}K_{args.pressure}bar_nvt.traj', index=':', format='lammps-dump-text')[50:]
-random.shuffle(refer)
-refer = random.sample(refer, 1)
-
-# Mi = []
-# for atoms in refer:
-#     pos = jnp.array(atoms.get_positions())
-#     cell = jnp.array(atoms.get_cell())
-#     dm = get_distance_matrix(pos, cell)
-#     mi = acsf_embed(dm)
-#     Mi.append(mi)
-# Mi = jnp.vstack(Mi)
 bandwidth = args.bandwidth
 
 
@@ -109,7 +96,6 @@ def update_cache(snapshot):
 
 def collective_variable(rs):
     """Function that calculate delta entropy"""
-    global bandwidth
     
     cache = get_cache()
     cell_shape = cache.get('cell_shape')
@@ -134,18 +120,8 @@ class EntropyCV(CollectiveVariable):
     
 
 class CustomMetaDLogger(MetaDLogger):
-    def __init__(self, hills_file, forces_file, log_period):
+    def __init__(self, hills_file, log_period):
         super().__init__(hills_file, log_period)
-        self.forces_file = forces_file
-
-
-    def save_forces(self, forces, bias):
-        with open(f'{self.forces_file}.frc', "a+", encoding="utf8") as f:
-            f.write(str(self.counter) + "\t")
-            f.write("\t".join(map(str, forces.flatten())) + "\n")
-        with open(f'{self.forces_file}.bias', "a+", encoding="utf8") as f:
-            f.write(str(self.counter) + "\t")
-            f.write("\t".join(map(str, bias.flatten())) + "\n")
 
 
     def __call__(self, snapshot, state, timestep):
@@ -155,7 +131,6 @@ class CustomMetaDLogger(MetaDLogger):
         if self.counter >= self.log_period and self.counter % self.log_period == 0:
             idx = state.idx - 1 if state.idx > 0 else 0
             self.save_hills(state.centers[idx], state.sigmas, state.heights[idx])
-            #self.save_forces(snapshot.forces, state.bias)
 
         self.counter += 1   
 
@@ -170,7 +145,7 @@ def main(argv):
 
     set_cache_updater(update_cache)
     # input file for lammps simulation read_data command
-    cache = initialize_cache(f'structure/Si_{temperature}K_{pressure}bar_nvt.lmp')
+    cache = initialize_cache(f'str/Si_{temperature}K_{pressure}bar.lmp')
     cvs = [EntropyCV(np.arange(cache.get('n_atoms')))]
 
     sigma = [args.width] * len(cvs)
@@ -178,18 +153,15 @@ def main(argv):
     stride = args.stride
     timesteps = args.time_steps
     ngauss = timesteps // stride
-    prefix = 'results_deltaH_self/'
+    prefix = 'results/'
     output_stride = args.log_steps
 
     context_args = {"output_stride": args.log_steps}
 
-    if prefix == 'results_unbiased/':
-        file_name = 'unbiased'
-    else:
-        file_name = f'{height}_{sigma[0]}_{bandwidth}_{stride}_{temperature}_{deltaT}'
+    file_name = f'{height}_{sigma[0]}_{bandwidth}_{stride}_{temperature}_{deltaT}'
 
     method = Metadynamics(cvs=cvs, height=height, sigma=sigma, stride=stride, ngaussians=ngauss, deltaT=deltaT, kB=kB)
-    callback = CustomMetaDLogger(f'{prefix}{file_name}.dat', f'{prefix}{file_name}', output_stride)
+    callback = CustomMetaDLogger(f'{prefix}{file_name}.dat', output_stride)
 
     context_args['file_name'] = f'{prefix}{file_name}'
     context_args['temperature'] = temperature

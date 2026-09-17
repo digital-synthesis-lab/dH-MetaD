@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dh-metad"
+version = "0.1.0"
+description = "Information Entropy is a General-Purpose Collective Variable for Enhanced Sampling"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Xiangrui Li", email = "xiangruili0307@ucla.edu" }]
+classifiers = ["License :: OSI Approved :: BSD License"]
+
+# Minimum requirements only: OpenMM, LAMMPS and openff-toolkit are installed
+# separately (see README) so this does not disturb an existing env.
+# PySAGES is the fork adjusted to track the simulation box under NPT; it brings
+# in jax/numba/dill, and the OpenMM & LAMMPS backend plugins still need to be
+# compiled by hand afterwards.
+dependencies = [
+    "quests @ git+https://github.com/dskoda/quests.git",
+    "pysages @ git+https://github.com/XiangruiLi-Ray/PySAGES.git",
+    "ase",
+    "numpy",
+    "matplotlib",
+]
+
+[project.urls]
+Repository = "https://github.com/digital-synthesis-lab/dH-MetaD"
+
+# The repo ships example directories, not an importable package.
+[tool.setuptools]
+packages = []

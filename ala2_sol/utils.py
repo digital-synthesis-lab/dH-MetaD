@@ -11,6 +11,7 @@ DEFAULT_PARAMS=jnp.array([(1,0.1),(1,0.2),(1,0.3),(1,0.4)])
 pi = jnp.pi
 
 
+
 @jit
 def distance_matrix(A: jnp.ndarray, B: jnp.ndarray):
     """Fully vectorized continuous distance calculation."""
@@ -19,8 +20,42 @@ def distance_matrix(A: jnp.ndarray, B: jnp.ndarray):
     
     dot_product = A @ B.T  # (N, M)
     squared_dist = norm_A + norm_B.T - 2.0 * dot_product  # (N, M)
-    squared_dist = jnp.maximum(squared_dist, 1e-16)
-    return jnp.sqrt(squared_dist)
+    squared_dist_stable = jnp.maximum(squared_dist, 1e-16)
+    # squared_dist_stable = squared_dist + 1e-8
+    return jnp.sqrt(squared_dist_stable)
+
+
+
+@jit
+def min_image(dr: jnp.ndarray, cell: jnp.ndarray):
+    """
+    Wrap displacement vectors into the minimum image convention.
+
+    ``cell`` holds the three box vectors as rows, in the same length unit as ``dr``
+    (nanometers here). Going through fractional coordinates keeps this correct for a
+    triclinic box as well as the cubic one the solvated runs use.
+    """
+    inv_cell = jnp.linalg.inv(cell)
+    frac = dr @ inv_cell.T
+    frac = frac - jnp.round(frac)
+    return frac @ cell.T
+
+
+@jit
+def get_distance_matrix(positions: jnp.ndarray, cell: jnp.ndarray):
+    """
+    Pairwise distance matrix under periodic boundary conditions.
+
+    Only meaningful while every distance of interest stays below half the shortest box
+    length -- past that the minimum image convention folds a genuine separation back
+    into the box.
+    """
+    dr = positions[:, None, :] - positions[None, :, :]
+    dr = min_image(dr, cell)
+
+    # the epsilon keeps sqrt(0) on the diagonal differentiable
+    distances_sq = jnp.sum(dr * dr, axis=2)
+    return jnp.sqrt(distances_sq + 1e-16)
 
 
 @jit
@@ -119,11 +154,22 @@ def similarity(
  
 
 @jit
-def get_descriptor(r: jnp.ndarray, params: jnp.ndarray = DEFAULT_PARAMS):
+def get_descriptor(
+    r: jnp.ndarray,
+    params: jnp.ndarray = DEFAULT_PARAMS,
+    cell: jnp.ndarray = None,
+):
     """
     Calculate descriptor based on atom positions
+
+    ``cell`` is the 3x3 matrix of box vectors (rows). When it is given the pair
+    distances follow the minimum image convention; when it is None the plain Euclidean
+    distances are used, which is what the vacuum runs want.
     """
-    D = distance_matrix(r, r)
+    if cell is None:
+        D = distance_matrix(r, r)
+    else:
+        D = get_distance_matrix(r, cell)
     M = acsf_embed(D, params)
     return M
 
@@ -181,7 +227,6 @@ def dihedrals(traj: List[Atoms], indices_list: list[Tuple]):
         result_list.append(result)
     return np.array(result_list)
 
-
 def nans_at_jumps(x, y, threshold=5.0):
     """
     Insert NaN values where jumps occur. Matplotlib won't draw lines through NaNs.
@@ -200,5 +245,3 @@ def nans_at_jumps(x, y, threshold=5.0):
     y_with_nans = np.insert(y, jump_indices, np.nan)
     
     return x_with_nans, y_with_nans
-
-

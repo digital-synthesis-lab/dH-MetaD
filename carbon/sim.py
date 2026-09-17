@@ -16,7 +16,6 @@ from ase.units import kB
 # PySAGES
 import pysages
 from pysages.backends.lammps import get_cache, set_cache_updater
-from pysages.colvars import Distance
 from pysages.colvars.core import CollectiveVariable, multicomponent
 from pysages.methods import Metadynamics, MetaDLogger
 
@@ -35,6 +34,7 @@ def initialize_cache(data_file):
         'cell': cell,
         'cell_shape': cell.shape,
         'cell_dtype': cell.dtype,
+
         'n_atoms': len(atoms),
     }
     return cache
@@ -47,7 +47,7 @@ def generate_simulation(file_name, temperature, pressure, output_stride, args=""
     context.file('in.lmp')
     context.command(f'log {file_name}.log')
     context.command(f'dump 1 all custom {output_stride} {file_name}.traj element x y z id')
-    context.command(f'dump_modify 1 element Cu')
+    context.command(f'dump_modify 1 element C')
     return context
 
 
@@ -58,13 +58,13 @@ def get_args(argv):
         ("time-steps", "t", int, 1e6, "Number of simulation steps"),
         ("kokkos", "k", bool, True, "Whether to use Kokkos acceleration"),
         ("log-steps", "l", int, 1000, "Number of simulation steps for logging"),
-        ("temperature", "T", int, 1100, "Temperature of the simulation"),
-        ("pressure", "p", int, 1, "Pressure of the simulation"),
+        ("temperature", "T", int, 3000, "Temperature of the simulation"),
+        ("pressure", "p", int, 1e6, "Pressure of the simulation"),
         ("height", "y", float, 0.1, "Height of gaussian bias"),
-        ("width", "w", float, 4.0, "Width of gaussian bias"),
+        ("width", "w", float, 32, "Width of gaussian bias"),
         ("deltaT", "dT", float, None, "DeltaT for well-tempered metadynamics"),
         ("stride", "s", int, 100, "Frequency of adding gaussian bias"),
-        ("bandwidth", "b", float, 0.025, "Bandwidth for dH calculation"),
+        ("bandwidth", "b", float, 0.25, "Bandwidth for dH calculation"),
     ]
     parser = argparse.ArgumentParser(description="Example script to run pysages with lammps")
 
@@ -83,6 +83,18 @@ def get_args(argv):
 
 
 args = get_args(sys.argv[1:])
+refer = read(f'refer/{args.temperature}K_{args.pressure}bar.traj', index=':', format='lammps-dump-text')[50:]
+random.shuffle(refer)
+refer = random.sample(refer, 1)
+
+Mi = []
+for atoms in refer:
+    pos = jnp.array(atoms.get_positions())
+    cell = jnp.array(atoms.get_cell())
+    dm = get_distance_matrix(pos, cell)
+    mi = acsf_embed(dm)
+    Mi.append(mi)
+Mi = jnp.vstack(Mi)
 bandwidth = args.bandwidth
 
 
@@ -107,7 +119,7 @@ def collective_variable(rs):
 
     dm = get_distance_matrix(rs, cell)
     M = acsf_embed(dm)
-    dH = delta_entropy(M, M, bandwidth)
+    dH = delta_entropy(M, Mi, bandwidth)
     return dH
 
 
@@ -119,9 +131,8 @@ class EntropyCV(CollectiveVariable):
     
 
 class CustomMetaDLogger(MetaDLogger):
-    def __init__(self, hills_file, log_period):
+    def __init__(self, hills_file,  log_period):
         super().__init__(hills_file, log_period)
-
 
     def __call__(self, snapshot, state, timestep):
         """
@@ -144,7 +155,7 @@ def main(argv):
 
     set_cache_updater(update_cache)
     # input file for lammps simulation read_data command
-    cache = initialize_cache(f'str/Cu_{temperature}K_{pressure}bar.lmp')
+    cache = initialize_cache(f'str/graphite_{temperature}K_{pressure}bar.lmp')
     cvs = [EntropyCV(np.arange(cache.get('n_atoms')))]
 
     sigma = [args.width] * len(cvs)
