@@ -94,7 +94,7 @@ example:
 
 ```
 cd copper
-python sim.py --temperature 1100 --pressure 0 --height 0.1 --width 0.008 --bandwidth 0.025
+python sim.py --temperature 1100 --pressure 1 --height 0.1 --width 4 --bandwidth 0.025
 ```
 
 Run `python sim.py --help` in any example directory for the full list of options (number
