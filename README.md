@@ -13,8 +13,7 @@ already sampled. The method is model-free, requires no training data, and applie
 organic and inorganic systems, enabling blind exploration of unknown metastable states in
 high-dimensional configurational spaces.
 
-A preprint of this work is available: [Li and Schwalbe-Koda, *Information Content is a
-General-Purpose Collective Variable for Enhanced Sampling*](https://doi.org/10.48550/arXiv.2604.05239)
+For full details, see our paper: [Information content is a general-purpose collective variable for enhanced sampling](https://doi.org/10.1063/5.0355418).
 
 ## Installation
 
@@ -106,17 +105,15 @@ system with the backbone dihedrals as CVs for comparison. Results are written to
 
 ## Citation
 
-If you use δH-MetaD in your work, please cite:
-
 ```bibtex
 @article{li2026information,
-    title = {Information Content is a General-Purpose Collective Variable for Enhanced Sampling},
-    author = {Li, Xiangrui and Schwalbe-Koda, Daniel},
-    year = {2026},
-    eprint = {2604.05239},
-    archivePrefix = {arXiv},
-    doi = {10.48550/arXiv.2604.05239},
-    url = {https://doi.org/10.48550/arXiv.2604.05239},
+  title={Information content is a general-purpose collective variable for enhanced sampling},
+  author={Li, Xiangrui and Schwalbe-Koda, Daniel},
+  journal={The Journal of Chemical Physics},
+  volume={165},
+  number={16},
+  year={2026},
+  publisher={AIP Publishing}
 }
 ```
 
